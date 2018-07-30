@@ -58,12 +58,10 @@ func MarshalBigEndian(ins interface{}) ([]byte, error) {
 			marshaler := cur.Interface().(BigEndianMarshaler)
 			if data, e := marshaler.MarshalBigEndian(); e != nil {
 				err = e
-				break
-			} else if _, err = buf.Write(data); err != nil {
-				break
 			} else {
-				continue
+				_, err = buf.Write(data)
 			}
+			continue
 		}
 
 		switch kind := cur.Kind(); kind {
