@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"log"
 	"reflect"
 )
 
@@ -48,7 +47,6 @@ func MarshalBigEndian(ins interface{}) ([]byte, error) {
 	stack.Push(reflect.ValueOf(ins))
 	for len(stack) > 0 && err == nil {
 		cur = stack.Pop()
-		log.Println("current", cur)
 
 		if !cur.IsValid() {
 			err = errors.New("Unexcepted error")
