@@ -7,17 +7,20 @@ import (
 	"reflect"
 )
 
-var (
-	bigEndianMarshalerType    = reflect.TypeOf(new(BigEndianMarshaler)).Elem()
-	littleEndianMarshalerType = reflect.TypeOf(new(LittleEndianMarshaler)).Elem()
-)
-
 type BigEndianMarshaler interface {
 	MarshalBigEndian() ([]byte, error)
 }
 
 type LittleEndianMarshaler interface {
 	MarshalLittleEndian() ([]byte, error)
+}
+
+func MarshalBigEndian(ins interface{}) ([]byte, error) {
+	return marshal(ins, binary.BigEndian, bigEndianMarshalerType, bigEndianMarshaler)
+}
+
+func MarshalLittleEndian(ins interface{}) ([]byte, error) {
+	return marshal(ins, binary.LittleEndian, littleEndianMarshalerType, littleEndianMarshaler)
 }
 
 // {{{ valueStack
@@ -35,6 +38,11 @@ func (stack *valueStack) Pop() (ret reflect.Value) {
 
 // }}}
 
+var (
+	bigEndianMarshalerType    = reflect.TypeOf(new(BigEndianMarshaler)).Elem()
+	littleEndianMarshalerType = reflect.TypeOf(new(LittleEndianMarshaler)).Elem()
+)
+
 type marshalerFunc func(v interface{}) ([]byte, error)
 
 func bigEndianMarshaler(v interface{}) ([]byte, error) {
@@ -45,14 +53,6 @@ func bigEndianMarshaler(v interface{}) ([]byte, error) {
 func littleEndianMarshaler(v interface{}) ([]byte, error) {
 	marshaler := v.(LittleEndianMarshaler)
 	return marshaler.MarshalLittleEndian()
-}
-
-func MarshalBigEndian(ins interface{}) ([]byte, error) {
-	return marshal(ins, binary.BigEndian, bigEndianMarshalerType, bigEndianMarshaler)
-}
-
-func MarshalLittleEndian(ins interface{}) ([]byte, error) {
-	return marshal(ins, binary.LittleEndian, littleEndianMarshalerType, littleEndianMarshaler)
 }
 
 func marshal(ins interface{}, order binary.ByteOrder, marshalerType reflect.Type, marshaler marshalerFunc) ([]byte, error) {
