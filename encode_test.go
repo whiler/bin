@@ -110,3 +110,9 @@ func TestMarshalBigEndianInvalidTagError(t *testing.T) {
 		t.Error("except Field index is invalid error, got nil")
 	}
 }
+
+func TestMarshalBigEndianInvalidValue(t *testing.T) {
+	if _, e := MarshalBigEndian(nil); e == nil {
+		t.Error("except Unexcepted error, got nil")
+	}
+}
