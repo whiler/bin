@@ -83,12 +83,17 @@ func MarshalBigEndian(ins interface{}) ([]byte, error) {
 				stack.Push(cur.Index(i))
 			}
 
+		case reflect.String:
+			data := []byte(cur.Interface().(string))
+			if _, err = buf.Write(data); err != nil {
+				break
+			}
+
 		case reflect.Bool,
 			reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 			reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
 			reflect.Float32, reflect.Float64,
-			reflect.Complex64, reflect.Complex128,
-			reflect.String:
+			reflect.Complex64, reflect.Complex128:
 			if err = binary.Write(buf, binary.BigEndian, cur.Interface()); err != nil {
 				break
 			}
