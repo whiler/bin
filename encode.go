@@ -23,21 +23,6 @@ func MarshalLittleEndian(ins interface{}) ([]byte, error) {
 	return marshal(ins, binary.LittleEndian, littleEndianMarshalerType, littleEndianMarshaler)
 }
 
-// {{{ valueStack
-type valueStack []reflect.Value
-
-func (stack *valueStack) Push(value reflect.Value) {
-	*stack = append(*stack, value)
-}
-
-func (stack *valueStack) Pop() (ret reflect.Value) {
-	size := len(*stack)
-	ret, *stack = (*stack)[size-1], (*stack)[:size-1]
-	return
-}
-
-// }}}
-
 var (
 	bigEndianMarshalerType    = reflect.TypeOf(new(BigEndianMarshaler)).Elem()
 	littleEndianMarshalerType = reflect.TypeOf(new(LittleEndianMarshaler)).Elem()
@@ -92,46 +77,7 @@ func marshal(ins interface{}, order binary.ByteOrder, marshalerType reflect.Type
 			}
 
 		case reflect.Struct:
-			numField := cur.NumField()
-			values := make([]reflect.Value, numField)
-			idx := 0
-			allowInvalid := true
-			for i := numField - 1; i >= 0; i-- {
-				tag := tpe.Field(i).Tag.Get(TagName)
-				idx, err = getIndexFromTag(tag, i)
-				switch {
-				case err != nil:
-					break
-				case idx == -1:
-					continue
-				case idx >= numField:
-					err = errors.New("Field index out of range")
-					break
-				case values[numField-idx-1].IsValid():
-					err = errors.New("Field index duplicated")
-					break
-				default:
-					values[numField-idx-1] = cur.Field(i)
-				}
-			}
-			if err != nil {
-				break
-			}
-			for _, value := range values {
-				switch {
-				case allowInvalid && value.IsValid():
-					allowInvalid = false
-					stack.Push(value)
-				case !allowInvalid && !value.IsValid():
-					err = errors.New("Field index is invalid")
-					break
-				case !allowInvalid && value.IsValid():
-					stack.Push(value)
-				}
-				if err != nil {
-					break
-				}
-			}
+			err = handleStructKind(&cur, tpe, &stack)
 
 		case reflect.Slice, reflect.Array:
 			for i := cur.Len() - 1; i >= 0; i-- {
