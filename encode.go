@@ -41,19 +41,22 @@ func MarshalBigEndian(ins interface{}) ([]byte, error) {
 		buf   *bytes.Buffer = &bytes.Buffer{}
 		stack valueStack    = valueStack{}
 		cur   reflect.Value
+		tpe   reflect.Type
 		err   error
 	)
 
 	stack.Push(reflect.ValueOf(ins))
-	for len(stack) > 0 {
+	for len(stack) > 0 && err == nil {
 		cur = stack.Pop()
 		log.Println("current", cur)
 
 		if !cur.IsValid() {
-			continue
+			err = errors.New("Unexcepted error")
+			break
 		}
 
-		if cur.Type().Implements(bigEndianMarshalerType) {
+		tpe = cur.Type()
+		if tpe.Implements(bigEndianMarshalerType) {
 			marshaler := cur.Interface().(BigEndianMarshaler)
 			if data, e := marshaler.MarshalBigEndian(); e != nil {
 				err = e
@@ -68,14 +71,51 @@ func MarshalBigEndian(ins interface{}) ([]byte, error) {
 		switch kind := cur.Kind(); kind {
 		case reflect.Ptr:
 			if cur.IsNil() {
-				stack.Push(reflect.New(cur.Type().Elem()))
+				stack.Push(reflect.New(tpe.Elem()))
 			} else {
 				stack.Push(cur.Elem())
 			}
 
 		case reflect.Struct:
-			for i := cur.NumField() - 1; i >= 0; i-- {
-				stack.Push(cur.Field(i))
+			numField := cur.NumField()
+			values := make([]reflect.Value, numField)
+			idx := 0
+			allowInvalid := true
+			for i := numField - 1; i >= 0; i-- {
+				tag := tpe.Field(i).Tag.Get(TagName)
+				idx, err = getIndexFromTag(tag, i)
+				switch {
+				case err != nil:
+					break
+				case idx == -1:
+					continue
+				case idx >= numField:
+					err = errors.New("Field index out of range")
+					break
+				case values[numField-idx-1].IsValid():
+					err = errors.New("Field index duplicated")
+					break
+				default:
+					values[numField-idx-1] = cur.Field(i)
+				}
+			}
+			if err != nil {
+				break
+			}
+			for _, value := range values {
+				switch {
+				case allowInvalid && value.IsValid():
+					allowInvalid = false
+					stack.Push(value)
+				case !allowInvalid && !value.IsValid():
+					err = errors.New("Field index is invalid")
+					break
+				case !allowInvalid && value.IsValid():
+					stack.Push(value)
+				}
+				if err != nil {
+					break
+				}
 			}
 
 		case reflect.Slice, reflect.Array:
@@ -85,22 +125,17 @@ func MarshalBigEndian(ins interface{}) ([]byte, error) {
 
 		case reflect.String:
 			data := []byte(cur.Interface().(string))
-			if _, err = buf.Write(data); err != nil {
-				break
-			}
+			_, err = buf.Write(data)
 
 		case reflect.Bool,
 			reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 			reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
 			reflect.Float32, reflect.Float64,
 			reflect.Complex64, reflect.Complex128:
-			if err = binary.Write(buf, binary.BigEndian, cur.Interface()); err != nil {
-				break
-			}
+			err = binary.Write(buf, binary.BigEndian, cur.Interface())
 
 		default:
 			err = errors.New("Unsupported kind:" + string(kind))
-			break
 		}
 	}
 
