@@ -62,3 +62,57 @@ func ExampleMarshalLittleEndian() {
 	// Output:
 	// [127 0 0 1 56 4 5]
 }
+
+func ExampleUnmarshalBigEndian() {
+	type IPv4 struct {
+		Addr [4]byte
+		Port uint16
+	}
+
+	type Greet struct {
+		Ver  uint8  `bin:"1"`
+		Addr *IPv4  `bin:"0"`
+		Memo string `bin:"-"`
+	}
+
+	bytes := []byte{127, 0, 0, 1, 4, 56, 5}
+	ins := Greet{}
+	err := bin.UnmarshalBigEndian(bytes, &ins)
+	if err != nil {
+		fmt.Printf("bin.UnmarshalBigEndian error: %v", err)
+	} else {
+		fmt.Println(ins.Ver)
+		fmt.Println(ins.Addr)
+	}
+
+	// Output:
+	// 5
+	// &{[127 0 0 1] 1080}
+}
+
+func ExampleUnmarshalLittleEndian() {
+	type IPv4 struct {
+		Addr [4]byte
+		Port uint16
+	}
+
+	type Greet struct {
+		Ver  uint8  `bin:"1"`
+		Addr *IPv4  `bin:"0"`
+		Memo string `bin:"-"`
+	}
+
+	bytes := []byte{127, 0, 0, 1, 56, 4, 5}
+	ins := Greet{}
+	err := bin.UnmarshalLittleEndian(bytes, &ins)
+	if err != nil {
+		fmt.Printf("bin.UnmarshalLittleEndian error: %v", err)
+	} else {
+		fmt.Println(ins.Ver)
+		fmt.Println(ins.Addr)
+	}
+
+	// Output:
+	// 5
+	// &{[127 0 0 1] 1080}
+}
