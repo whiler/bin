@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestMarshalBigEndian(t *testing.T) {
+func TestSupportedMarshalTypes(t *testing.T) {
 	type Tpe struct {
 		ID   int8
 		Name string
@@ -34,25 +34,43 @@ func TestMarshalBigEndian(t *testing.T) {
 
 	ins := Tpes{}
 	except := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-	bs, err := MarshalBigEndian(ins)
-	if err != nil {
+
+	if bs, err := MarshalBigEndian(ins); err != nil {
+		t.Error(err)
+	} else if !bytes.Equal(bs, except) {
+		t.Errorf("except: %v\ngot: %v", except, bs)
+	}
+
+	if bs, err := MarshalLittleEndian(ins); err != nil {
 		t.Error(err)
 	} else if !bytes.Equal(bs, except) {
 		t.Errorf("except: %v\ngot: %v", except, bs)
 	}
 }
 
-type testBigEndianMarshalerError uint8
+type testMarshalerError uint8
 
-func (i testBigEndianMarshalerError) MarshalBigEndian() ([]byte, error) {
+func (i testMarshalerError) MarshalBigEndian() ([]byte, error) {
 	return nil, errors.New("MarshalBigEndian Error")
 }
 
+func (i testMarshalerError) MarshalLittleEndian() ([]byte, error) {
+	return nil, errors.New("MarshalLittleEndian Error")
+}
+
 func TestBigEndianMarshalerError(t *testing.T) {
-	var ins testBigEndianMarshalerError
+	var ins testMarshalerError
 	_, err := MarshalBigEndian(ins)
 	if err == nil {
 		t.Error("except MarshalBigEndian Error, got nil")
+	}
+}
+
+func TestLittleEndianMarshalerError(t *testing.T) {
+	var ins testMarshalerError
+	_, err := MarshalLittleEndian(ins)
+	if err == nil {
+		t.Error("except MarshalLittleEndian Error, got nil")
 	}
 }
 

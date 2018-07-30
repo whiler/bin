@@ -35,7 +35,27 @@ func (stack *valueStack) Pop() (ret reflect.Value) {
 
 // }}}
 
+type marshalerFunc func(v interface{}) ([]byte, error)
+
+func bigEndianMarshaler(v interface{}) ([]byte, error) {
+	marshaler := v.(BigEndianMarshaler)
+	return marshaler.MarshalBigEndian()
+}
+
+func littleEndianMarshaler(v interface{}) ([]byte, error) {
+	marshaler := v.(LittleEndianMarshaler)
+	return marshaler.MarshalLittleEndian()
+}
+
 func MarshalBigEndian(ins interface{}) ([]byte, error) {
+	return marshal(ins, binary.BigEndian, bigEndianMarshalerType, bigEndianMarshaler)
+}
+
+func MarshalLittleEndian(ins interface{}) ([]byte, error) {
+	return marshal(ins, binary.LittleEndian, littleEndianMarshalerType, littleEndianMarshaler)
+}
+
+func marshal(ins interface{}, order binary.ByteOrder, marshalerType reflect.Type, marshaler marshalerFunc) ([]byte, error) {
 	var (
 		buf   *bytes.Buffer = &bytes.Buffer{}
 		stack valueStack    = valueStack{}
@@ -54,9 +74,8 @@ func MarshalBigEndian(ins interface{}) ([]byte, error) {
 		}
 
 		tpe = cur.Type()
-		if tpe.Implements(bigEndianMarshalerType) {
-			marshaler := cur.Interface().(BigEndianMarshaler)
-			if data, e := marshaler.MarshalBigEndian(); e != nil {
+		if tpe.Implements(marshalerType) {
+			if data, e := marshaler(cur.Interface()); e != nil {
 				err = e
 			} else {
 				_, err = buf.Write(data)
@@ -128,7 +147,7 @@ func MarshalBigEndian(ins interface{}) ([]byte, error) {
 			reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
 			reflect.Float32, reflect.Float64,
 			reflect.Complex64, reflect.Complex128:
-			err = binary.Write(buf, binary.BigEndian, cur.Interface())
+			err = binary.Write(buf, order, cur.Interface())
 
 		default:
 			err = errors.New("Unsupported kind:" + string(kind))
