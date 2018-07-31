@@ -1,7 +1,7 @@
 package bin
 
 import (
-	"errors"
+	"fmt"
 	"reflect"
 	"strconv"
 )
@@ -14,10 +14,8 @@ func getIndexFromTag(tag string, i int) (int, error) {
 	switch tag {
 	case "":
 		return i, nil
-
 	case "-":
 		return -1, nil
-
 	default:
 		if i64, e := strconv.ParseUint(tag, 10, strconv.IntSize); e != nil {
 			return -1, e
@@ -40,10 +38,12 @@ func (stack *valueStack) Pop() (ret reflect.Value) {
 }
 
 func handleStructKind(cur *reflect.Value, tpe reflect.Type, stack *valueStack) (err error) {
-	numField := cur.NumField()
-	fields := make([]reflect.Value, numField)
-	idx := 0
-	allowInvalid := true
+	var (
+		numField     = cur.NumField()
+		fields       = make([]reflect.Value, numField)
+		idx          = 0
+		allowInvalid = true
+	)
 
 	for i := 0; i < numField && err == nil; i++ {
 		tag := tpe.Field(i).Tag.Get(TagName)
@@ -54,10 +54,10 @@ func handleStructKind(cur *reflect.Value, tpe reflect.Type, stack *valueStack) (
 		case idx == -1:
 			continue
 		case idx >= numField:
-			err = errors.New("Field index out of range")
+			err = fmt.Errorf("Field index '%d' out of range", idx)
 			break
 		case fields[numField-idx-1].IsValid():
-			err = errors.New("Field index duplicated")
+			err = fmt.Errorf("Field index '%d' duplicated", idx)
 			break
 		default:
 			fields[numField-idx-1] = cur.Field(i)
@@ -65,15 +65,15 @@ func handleStructKind(cur *reflect.Value, tpe reflect.Type, stack *valueStack) (
 	}
 
 	if err == nil {
-		for _, value := range fields {
+		for _, field := range fields {
 			switch {
-			case allowInvalid && value.IsValid():
+			case allowInvalid && field.IsValid():
 				allowInvalid = false
-				stack.Push(value)
-			case !allowInvalid && !value.IsValid():
-				err = errors.New("Field index is invalid")
-			case !allowInvalid && value.IsValid():
-				stack.Push(value)
+				stack.Push(field)
+			case !allowInvalid && !field.IsValid():
+				err = fmt.Errorf("Field indexes invalid")
+			case !allowInvalid && field.IsValid():
+				stack.Push(field)
 			}
 			if err != nil {
 				break

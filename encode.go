@@ -3,7 +3,7 @@ package bin
 import (
 	"bytes"
 	"encoding/binary"
-	"errors"
+	"fmt"
 	"reflect"
 )
 
@@ -54,7 +54,7 @@ func marshal(ins interface{}, order binary.ByteOrder, marshalerType reflect.Type
 		cur = stack.Pop()
 
 		if !cur.IsValid() {
-			err = errors.New("Unexcepted error")
+			err = fmt.Errorf("Unexcepted error")
 			break
 		}
 
@@ -96,7 +96,7 @@ func marshal(ins interface{}, order binary.ByteOrder, marshalerType reflect.Type
 			err = binary.Write(buf, order, cur.Interface())
 
 		default:
-			err = errors.New("Unsupported kind:" + string(kind))
+			err = fmt.Errorf("Unsupported kind:" + string(kind))
 		}
 	}
 

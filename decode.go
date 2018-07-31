@@ -2,7 +2,7 @@ package bin
 
 import (
 	"encoding/binary"
-	"errors"
+	"fmt"
 	"math"
 	"reflect"
 )
@@ -53,7 +53,7 @@ func unmarshal(input []byte, ins interface{}, order binary.ByteOrder, unmarshale
 
 	cur = reflect.ValueOf(ins)
 	if cur.Kind() != reflect.Ptr || cur.IsNil() {
-		return errors.New("InvalidUnmarshalError")
+		return fmt.Errorf("Invalid Unmarshal Type %s", reflect.TypeOf(ins))
 	}
 
 	stack.Push(cur)
@@ -61,7 +61,7 @@ func unmarshal(input []byte, ins interface{}, order binary.ByteOrder, unmarshale
 		cur = stack.Pop()
 
 		if !cur.IsValid() {
-			err = errors.New("Unexcepted error")
+			err = fmt.Errorf("Invalid Value")
 			break
 		}
 
@@ -97,11 +97,11 @@ func unmarshal(input []byte, ins interface{}, order binary.ByteOrder, unmarshale
 				setValue(&cur, kind, order, input[offset:offset+delta])
 				offset += delta
 			} else {
-				err = errors.New("Need more bytes")
+				err = fmt.Errorf("Need more %d byte(s)", offset+delta-size)
 			}
 
 		default:
-			err = errors.New("Unsupported kind:" + string(kind))
+			err = fmt.Errorf("Unsupported kind %s", kind)
 		}
 	}
 
