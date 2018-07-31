@@ -85,8 +85,7 @@ func marshal(ins interface{}, order binary.ByteOrder, marshalerType reflect.Type
 			}
 
 		case reflect.String:
-			data := []byte(cur.Interface().(string))
-			_, err = buf.Write(data)
+			_, err = buf.WriteString(cur.String())
 
 		case reflect.Bool,
 			reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
@@ -96,7 +95,7 @@ func marshal(ins interface{}, order binary.ByteOrder, marshalerType reflect.Type
 			err = binary.Write(buf, order, cur.Interface())
 
 		default:
-			err = fmt.Errorf("Unsupported kind:" + string(kind))
+			err = fmt.Errorf("Unsupported kind %s", kind)
 		}
 	}
 
