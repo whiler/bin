@@ -42,11 +42,12 @@ func littleEndianMarshaler(v interface{}) ([]byte, error) {
 
 func marshal(ins interface{}, order binary.ByteOrder, marshalerType reflect.Type, marshaler marshalerFunc) ([]byte, error) {
 	var (
-		buf   *bytes.Buffer = &bytes.Buffer{}
-		stack valueStack    = valueStack{}
-		cur   reflect.Value
-		tpe   reflect.Type
-		err   error
+		buffer = new(bytes.Buffer)
+		stack  valueStack
+		cur    reflect.Value
+		tpe    reflect.Type
+		kind   reflect.Kind
+		err    error
 	)
 
 	stack.Push(reflect.ValueOf(ins))
@@ -59,16 +60,20 @@ func marshal(ins interface{}, order binary.ByteOrder, marshalerType reflect.Type
 		}
 
 		tpe = cur.Type()
+		kind = cur.Kind()
 		if tpe.Implements(marshalerType) {
+			if kind == reflect.Ptr && cur.IsNil() {
+				cur = reflect.New(tpe.Elem())
+			}
 			if data, e := marshaler(cur.Interface()); e != nil {
 				err = e
 			} else {
-				_, err = buf.Write(data)
+				_, err = buffer.Write(data)
 			}
 			continue
 		}
 
-		switch kind := cur.Kind(); kind {
+		switch kind {
 		case reflect.Ptr:
 			if cur.IsNil() {
 				stack.Push(reflect.New(tpe.Elem()))
@@ -85,19 +90,19 @@ func marshal(ins interface{}, order binary.ByteOrder, marshalerType reflect.Type
 			}
 
 		case reflect.String:
-			_, err = buf.WriteString(cur.String())
+			_, err = buffer.WriteString(cur.String())
 
 		case reflect.Bool,
 			reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 			reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
 			reflect.Float32, reflect.Float64,
 			reflect.Complex64, reflect.Complex128:
-			err = binary.Write(buf, order, cur.Interface())
+			err = binary.Write(buffer, order, cur.Interface())
 
 		default:
 			err = fmt.Errorf("Unsupported kind %s", kind)
 		}
 	}
 
-	return buf.Bytes(), err
+	return buffer.Bytes(), err
 }

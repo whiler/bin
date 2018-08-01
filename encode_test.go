@@ -2,6 +2,7 @@ package bin
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 )
 
@@ -107,6 +108,104 @@ func TestMarshalTags(t *testing.T) {
 			t.Errorf("case %d excepted some error but got nil", i)
 		} else if !bytes.Equal(bs, caze.except) {
 			t.Errorf("case %d except %v but got %v", i, caze.except, bs)
+		}
+	}
+}
+
+func TestMarshalLittleEndian(t *testing.T) {
+	for i, caze := range []struct {
+		ins    interface{}
+		except []byte
+	}{
+		{int16(255), []byte{255, 0}},
+		{[]int16{255, 255}, []byte{255, 0, 255, 0}},
+		{[2]int16{255, 255}, []byte{255, 0, 255, 0}},
+		{struct{ I16 int16 }{255}, []byte{255, 0}},
+		{struct{ I16s []int16 }{[]int16{255, 255}}, []byte{255, 0, 255, 0}},
+		{struct{ I16a [2]int16 }{[2]int16{255, 255}}, []byte{255, 0, 255, 0}},
+		{struct{ I16p *[]int16 }{&[]int16{255, 255}}, []byte{255, 0, 255, 0}},
+	} {
+		if bs, e := MarshalLittleEndian(caze.ins); e != nil {
+			t.Errorf("case %d got unexcepted error %v", i, e)
+		} else if !bytes.Equal(bs, caze.except) {
+			t.Errorf("case %d except %v but got %v", i, caze.except, bs)
+		}
+	}
+}
+
+func TestMarshalBigEndian(t *testing.T) {
+	for i, caze := range []struct {
+		ins    interface{}
+		except []byte
+	}{
+		{int16(255), []byte{0, 255}},
+		{[]int16{255, 255}, []byte{0, 255, 0, 255}},
+		{[2]int16{255, 255}, []byte{0, 255, 0, 255}},
+		{struct{ I16 int16 }{255}, []byte{0, 255}},
+		{struct{ I16s []int16 }{[]int16{255, 255}}, []byte{0, 255, 0, 255}},
+		{struct{ I16a [2]int16 }{[2]int16{255, 255}}, []byte{0, 255, 0, 255}},
+		{struct{ I16p *[]int16 }{&[]int16{255, 255}}, []byte{0, 255, 0, 255}},
+	} {
+		if bs, e := MarshalBigEndian(caze.ins); e != nil {
+			t.Errorf("case %d got unexcepted error %v", i, e)
+		} else if !bytes.Equal(bs, caze.except) {
+			t.Errorf("case %d except %v but got %v", i, caze.except, bs)
+		}
+	}
+}
+
+type okMarshaler struct{}
+
+func (ok okMarshaler) MarshalBigEndian() ([]byte, error) {
+	return []byte("ok"), nil
+}
+
+func (ok okMarshaler) MarshalLittleEndian() ([]byte, error) {
+	return []byte("ko"), nil
+}
+
+type koMarshaler struct{}
+
+func (ko koMarshaler) MarshalBigEndian() ([]byte, error) {
+	return []byte{}, fmt.Errorf("Test Error")
+}
+
+func (ko koMarshaler) MarshalLittleEndian() ([]byte, error) {
+	return []byte{}, fmt.Errorf("Test Error")
+}
+
+func TestMarshaler(t *testing.T) {
+	for _, ok := range []interface{}{
+		okMarshaler{},
+		&okMarshaler{},
+		struct{ I *okMarshaler }{},
+		&struct{ I *okMarshaler }{},
+	} {
+		if bs, e := MarshalBigEndian(ok); e != nil {
+			t.Errorf("got unexcepted error %v", e)
+		} else if !bytes.Equal(bs, []byte("ok")) {
+			t.Errorf("except %v but got %v", []byte("ok"), bs)
+		}
+		if bs, e := MarshalLittleEndian(ok); e != nil {
+			t.Errorf("got unexcepted error %v", e)
+		} else if !bytes.Equal(bs, []byte("ko")) {
+			t.Errorf("except %v but got %v", []byte("ko"), bs)
+		}
+	}
+}
+
+func TestMarshalerError(t *testing.T) {
+	for _, ko := range []interface{}{
+		koMarshaler{},
+		&koMarshaler{},
+		struct{ I *koMarshaler }{},
+		&struct{ I *koMarshaler }{},
+	} {
+		if _, e := MarshalBigEndian(ko); e == nil {
+			t.Errorf("except error but got nil")
+		}
+		if _, e := MarshalLittleEndian(ko); e == nil {
+			t.Errorf("except error but got nil")
 		}
 	}
 }
