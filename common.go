@@ -33,7 +33,7 @@ func (stack *valueStack) Push(value reflect.Value) {
 
 func (stack *valueStack) Pop() (ret reflect.Value) {
 	size := len(*stack)
-	ret, *stack = (*stack)[size-1], (*stack)[:size-1]
+	ret, *stack = (*stack)[size-1], (*stack)[0:size-1]
 	return
 }
 

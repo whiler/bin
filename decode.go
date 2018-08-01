@@ -53,17 +53,12 @@ func unmarshal(input []byte, ins interface{}, order binary.ByteOrder, unmarshale
 
 	cur = reflect.ValueOf(ins)
 	if cur.Kind() != reflect.Ptr || cur.IsNil() {
-		return fmt.Errorf("Invalid Unmarshal Type %s", reflect.TypeOf(ins))
+		return fmt.Errorf("Invalid Unmarshal Type %#v", ins)
 	}
 
 	stack.Push(cur)
 	for len(stack) > 0 && err == nil {
 		cur = stack.Pop()
-
-		if !cur.IsValid() {
-			err = fmt.Errorf("Invalid Value")
-			break
-		}
 
 		tpe = cur.Type()
 		if tpe.Implements(unmarshalerType) {
@@ -138,13 +133,13 @@ func setValue(cur *reflect.Value, kind reflect.Kind, order binary.ByteOrder, dat
 
 	case reflect.Complex64:
 		cur.SetComplex(complex(
-			float64(math.Float32frombits(order.Uint32(data[:4]))),
-			float64(math.Float32frombits(order.Uint32(data[4:]))),
+			float64(math.Float32frombits(order.Uint32(data[0:4]))),
+			float64(math.Float32frombits(order.Uint32(data[4:8]))),
 		))
 	case reflect.Complex128:
 		cur.SetComplex(complex(
-			math.Float64frombits(order.Uint64(data[:8])),
-			math.Float64frombits(order.Uint64(data[8:])),
+			math.Float64frombits(order.Uint64(data[0:8])),
+			math.Float64frombits(order.Uint64(data[8:16])),
 		))
 	}
 }
