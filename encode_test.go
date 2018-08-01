@@ -46,3 +46,67 @@ func TestMarshalTypes(t *testing.T) {
 		}
 	}
 }
+
+func TestUnsupportedMarshalTypes(t *testing.T) {
+	for i, caze := range []interface{}{
+		nil,
+		int(-1024),
+		uint(1024),
+	} {
+		if _, e := MarshalBigEndian(caze); e == nil {
+			t.Errorf("case %d excepted some error but got nil", i)
+		}
+	}
+}
+
+func TestMarshalTags(t *testing.T) {
+	for i, caze := range []struct {
+		ins    interface{}
+		except []byte
+		err    bool
+	}{
+		{struct {
+			First  byte
+			Second byte
+			Third  byte
+		}{1, 2, 3}, []byte{1, 2, 3}, false},
+		{struct {
+			First  byte `bin:"2"`
+			Second byte `bin:"1"`
+			Third  byte `bin:"0"`
+		}{1, 2, 3}, []byte{3, 2, 1}, false},
+		{struct {
+			First  byte `bin:"-"`
+			Second byte `bin:"1"`
+			Third  byte `bin:"0"`
+		}{1, 2, 3}, []byte{3, 2}, false},
+		{struct {
+			First  byte `bin:"2"`
+			Second byte `bin:"-"`
+			Third  byte `bin:"0"`
+		}{1, 2, 3}, []byte{}, true},
+		{struct {
+			First  byte `bin:"3"`
+			Second byte `bin:"1"`
+			Third  byte `bin:"0"`
+		}{1, 2, 3}, []byte{}, true},
+		{struct {
+			First  byte `bin:"x"`
+			Second byte `bin:"1"`
+			Third  byte `bin:"0"`
+		}{1, 2, 3}, []byte{}, true},
+		{struct {
+			First  byte `bin:"1"`
+			Second byte `bin:"1"`
+			Third  byte `bin:"0"`
+		}{1, 2, 3}, []byte{}, true},
+	} {
+		if bs, e := MarshalBigEndian(caze.ins); !caze.err && e != nil {
+			t.Errorf("case %d unexcepted error %v", i, e)
+		} else if caze.err && e == nil {
+			t.Errorf("case %d excepted some error but got nil", i)
+		} else if !bytes.Equal(bs, caze.except) {
+			t.Errorf("case %d except %v but got %v", i, caze.except, bs)
+		}
+	}
+}
