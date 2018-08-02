@@ -1,4 +1,6 @@
-# bin #
+## bin ##
+[![Build Status](https://travis-ci.org/whiler/bin.svg?branch=master)](https://travis-ci.org/whiler/bin) [![Coverage Status](https://coveralls.io/repos/github/whiler/bin/badge.svg)](https://coveralls.io/github/whiler/bin)
+
 Package bin implements encoding and decoding of binary data.
 The mapping between binary and Go values is described in the documentation for the Marshal and Unmarshal functions.
 
@@ -14,12 +16,12 @@ The main features are:
 - omit field support
 - byte order support
 
-## Install ##
+### Install ###
 ```
 go get -u github.com/whiler/bin
 ```
 
-## Examples ##
+### Examples ###
 Let's send one SOCKS 5 greeting packt to remote.
 ```
 type Reply struct {
@@ -31,7 +33,7 @@ reply := Reply{Ver: 5, Method: 2}
 err := bin.MarshalBigEndianTo(remote, reply)
 ```
 
-## Supported types ##
+### Supported types ###
 `fixed-size types` including `bool`, `int8`, `int16`, `int32`, `int64`, `uint8`, `uint16`, `uint32`, `uint64`, `float32`, `float64`, `complex64`, `complex128` and an array or struct containing only fixed-size types.
 
 |                           | fixed-size types | string | marshaler               | unmarshaler             |
