@@ -1,5 +1,5 @@
 ## bin ##
-[![Build Status](https://travis-ci.org/whiler/bin.svg?branch=master)](https://travis-ci.org/whiler/bin) [![Coverage Status](https://coveralls.io/repos/github/whiler/bin/badge.svg)](https://coveralls.io/github/whiler/bin)
+[![Build Status](https://travis-ci.org/whiler/bin.svg?branch=master)](https://travis-ci.org/whiler/bin) [![Coverage Status](https://coveralls.io/repos/github/whiler/bin/badge.svg)](https://coveralls.io/github/whiler/bin) [![Go Report Card](https://goreportcard.com/badge/whiler/bin)](https://goreportcard.com/report/whiler/bin) [![GitHub license](https://img.shields.io/github/license/whiler/bin.svg)](https://github.com/whiler/bin/blob/master/LICENSE)
 
 Package bin implements encoding and decoding of binary data.
 The mapping between binary and Go values is described in the documentation for the Marshal and Unmarshal functions.
