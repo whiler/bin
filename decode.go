@@ -1,8 +1,10 @@
 package bin
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io"
 	"math"
 	"reflect"
 )
@@ -16,11 +18,19 @@ type LittleEndianUnmarshaler interface {
 }
 
 func UnmarshalBigEndian(input []byte, ins interface{}) error {
-	return unmarshal(input, ins, binary.BigEndian, bigEndianUnmarshalerType, bigEndianUnmarshaler)
+	return unmarshal(bytes.NewBuffer(input), ins, binary.BigEndian, bigEndianUnmarshalerType, bigEndianUnmarshaler)
 }
 
 func UnmarshalLittleEndian(input []byte, ins interface{}) error {
-	return unmarshal(input, ins, binary.LittleEndian, littleEndianUnmarshalerType, littleEndianUnmarshaler)
+	return unmarshal(bytes.NewBuffer(input), ins, binary.LittleEndian, littleEndianUnmarshalerType, littleEndianUnmarshaler)
+}
+
+func UnmarshalBigEndianFrom(reader io.Reader, ins interface{}) error {
+	return unmarshal(reader, ins, binary.BigEndian, bigEndianUnmarshalerType, bigEndianUnmarshaler)
+}
+
+func UnmarshalLittleEndianFrom(reader io.Reader, ins interface{}) error {
+	return unmarshal(reader, ins, binary.LittleEndian, littleEndianUnmarshalerType, littleEndianUnmarshaler)
 }
 
 var (
@@ -40,15 +50,17 @@ func littleEndianUnmarshaler(v interface{}, data []byte) (used int, err error) {
 	return unmarshaler.UnmarshalLittleEndian(data)
 }
 
-func unmarshal(input []byte, ins interface{}, order binary.ByteOrder, unmarshalerType reflect.Type, unmarshaler unmarshalerFunc) error {
+func unmarshal(reader io.Reader, ins interface{}, order binary.ByteOrder, unmarshalerType reflect.Type, unmarshaler unmarshalerFunc) error {
 	var (
-		stack  valueStack
-		cur    reflect.Value
-		tpe    reflect.Type
-		err    error
-		offset int = 0
-		delta  int = 0
-		size   int = len(input)
+		stack      valueStack
+		cur        reflect.Value
+		tpe        reflect.Type
+		kind       reflect.Kind
+		err        error
+		buf        []byte
+		backReader = newBackfillReader(reader)
+		size       int
+		delta      int
 	)
 
 	cur = reflect.ValueOf(ins)
@@ -61,13 +73,22 @@ func unmarshal(input []byte, ins interface{}, order binary.ByteOrder, unmarshale
 		cur = stack.Pop()
 
 		tpe = cur.Type()
+		kind = cur.Kind()
 		if tpe.Implements(unmarshalerType) {
-			delta, err = unmarshaler(cur.Interface(), input[offset:])
-			offset += delta
+			if kind == reflect.Ptr && cur.IsNil() {
+				cur.Set(reflect.New(tpe.Elem()))
+			}
+			buf = make([]byte, defaultBufSize)
+			if size, err = backReader.Read(buf); err != nil {
+				continue
+			}
+			if delta, err = unmarshaler(cur.Interface(), buf); err == nil {
+				_, err = backReader.Backfill(buf[delta:size])
+			}
 			continue
 		}
 
-		switch kind := cur.Kind(); kind {
+		switch kind {
 		case reflect.Ptr:
 			if cur.IsNil() {
 				cur.Set(reflect.New(tpe.Elem()))
@@ -87,12 +108,9 @@ func unmarshal(input []byte, ins interface{}, order binary.ByteOrder, unmarshale
 			reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
 			reflect.Float32, reflect.Float64,
 			reflect.Complex64, reflect.Complex128:
-			delta = int(tpe.Size())
-			if offset+delta <= size {
-				setValue(&cur, kind, order, input[offset:offset+delta])
-				offset += delta
-			} else {
-				err = fmt.Errorf("Need more %d byte(s)", offset+delta-size)
+			buf = make([]byte, tpe.Size())
+			if _, err = io.ReadFull(backReader, buf); err == nil {
+				setValue(&cur, kind, order, buf)
 			}
 
 		default:

@@ -1,6 +1,7 @@
 package bin
 
 import (
+	"bytes"
 	"fmt"
 	"reflect"
 	"testing"
@@ -308,5 +309,50 @@ func TestUnmarshalerError(t *testing.T) {
 
 	if err := UnmarshalLittleEndian([]byte{}, &ins); err == nil {
 		t.Errorf("except some error but got nil")
+	}
+}
+
+type dynamicType struct {
+	Length uint8
+	Data   []byte
+}
+
+func (dyn *dynamicType) UnmarshalBigEndian(data []byte) (used int, err error) {
+	dyn.Length = data[0]
+	dyn.Data = make([]byte, dyn.Length)
+	copy(dyn.Data, data[1:dyn.Length+1])
+	used = int(dyn.Length) + 1
+	return
+}
+
+func (dyn *dynamicType) UnmarshalLittleEndian(data []byte) (used int, err error) {
+	dyn.Length = data[0]
+	dyn.Data = make([]byte, dyn.Length)
+	copy(dyn.Data, data[1:dyn.Length+1])
+	used = int(dyn.Length) + 1
+	return
+}
+
+func TestUnmarshalFrom(t *testing.T) {
+	type inTest struct {
+		DYN *dynamicType
+		ID  uint16
+	}
+	ins := inTest{}
+	except := inTest{&dynamicType{3, []byte{2, 5, 7}}, 1080}
+	rw := new(bytes.Buffer)
+
+	rw.Write([]byte{3, 2, 5, 7, 4, 56})
+	if err := UnmarshalBigEndianFrom(rw, &ins); err != nil {
+		t.Errorf("unexcept error: %v", err)
+	} else if !reflect.DeepEqual(ins, except) {
+		t.Errorf("except %#v, but got %#v", except, ins)
+	}
+
+	rw.Write([]byte{3, 2, 5, 7, 56, 4})
+	if err := UnmarshalLittleEndianFrom(rw, &ins); err != nil {
+		t.Errorf("unexcept error: %v", err)
+	} else if !reflect.DeepEqual(ins, except) {
+		t.Errorf("except %#v, but got %#v", except, ins)
 	}
 }
