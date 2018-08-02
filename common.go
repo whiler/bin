@@ -1,13 +1,16 @@
 package bin
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"reflect"
 	"strconv"
 )
 
 const (
-	TagName string = "bin"
+	TagName        string = "bin"
+	defaultBufSize        = 4096
 )
 
 func getIndexFromTag(tag string, i int) (int, error) {
@@ -82,4 +85,31 @@ func handleStructKind(cur *reflect.Value, tpe reflect.Type, stack *valueStack) (
 	}
 
 	return
+}
+
+type backfillReader struct {
+	buffer *bytes.Buffer
+	reader io.Reader
+}
+
+func newBackfillReader(reader io.Reader) *backfillReader {
+	return &backfillReader{new(bytes.Buffer), reader}
+}
+
+func (backReader *backfillReader) Read(dst []byte) (int, error) {
+	var (
+		offset int
+		total  int
+		err    error
+	)
+	if offset, _ = backReader.buffer.Read(dst); offset < len(dst) {
+		total, err = backReader.reader.Read(dst[offset:])
+		return total + offset, err
+	} else {
+		return offset, nil
+	}
+}
+
+func (backReader *backfillReader) Backfill(src []byte) (n int, err error) {
+	return backReader.buffer.Write(src)
 }
