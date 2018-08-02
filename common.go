@@ -9,6 +9,7 @@ import (
 )
 
 const (
+	// TagName defines the especial tag name in struct field we are using
 	TagName        string = "bin"
 	defaultBufSize        = 4096
 )

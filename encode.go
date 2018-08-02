@@ -8,14 +8,21 @@ import (
 	"reflect"
 )
 
+// BigEndianMarshaler is the interface implemented by types that can marshal themselves into valid big-endian binary data.
 type BigEndianMarshaler interface {
 	MarshalBigEndian() ([]byte, error)
 }
 
+// LittleEndianMarshaler is the interface implemented by types that can marshal themselves into valid little-endian binary data.
 type LittleEndianMarshaler interface {
 	MarshalLittleEndian() ([]byte, error)
 }
 
+// MarshalBigEndian returns the big-endian encoding binary data of ins.
+//
+// MarshalBigEndian traverses the value ins recursively.
+// If an encountered value implements the BigEndianMarshaler interface,
+// MarshalBigEndian calls its MarshalBigEndian method to produce big-endian binary data.
 func MarshalBigEndian(ins interface{}) ([]byte, error) {
 	var buffer = new(bytes.Buffer)
 	if err := marshal(buffer, ins, binary.BigEndian, bigEndianMarshalerType, bigEndianMarshaler); err != nil {
@@ -25,6 +32,11 @@ func MarshalBigEndian(ins interface{}) ([]byte, error) {
 	}
 }
 
+// MarshalLittleEndian returns the little-endian encoding binary data of ins.
+//
+// MarshalLittleEndian traverses the value ins recursively.
+// If an encountered value implements the LittleEndianMarshaler interface,
+// MarshalLittleEndian calls its MarshalLittleEndian method to produce little-endian binary data.
 func MarshalLittleEndian(ins interface{}) ([]byte, error) {
 	var buffer = new(bytes.Buffer)
 	if err := marshal(buffer, ins, binary.LittleEndian, littleEndianMarshalerType, littleEndianMarshaler); err != nil {
@@ -34,10 +46,20 @@ func MarshalLittleEndian(ins interface{}) ([]byte, error) {
 	}
 }
 
+// MarshalBigEndianTo writes the big-endian encoding binary data of ins into writer.
+//
+// MarshalBigEndianTo traverses the value ins recursively.
+// If an encountered value implements the BigEndianMarshaler interface,
+// MarshalBigEndianTo calls its MarshalBigEndian method to produce big-endian binary data.
 func MarshalBigEndianTo(writer io.Writer, ins interface{}) error {
 	return marshal(writer, ins, binary.BigEndian, bigEndianMarshalerType, bigEndianMarshaler)
 }
 
+// MarshalLittleEndianTo writes the little-endian encoding binary data of ins into writer.
+//
+// MarshalLittleEndianTo traverses the value ins recursively.
+// If an encountered value implements the LittleEndianMarshaler interface,
+// MarshalLittleEndianTo calls its MarshalLittleEndian method to produce little-endian binary data.
 func MarshalLittleEndianTo(writer io.Writer, ins interface{}) error {
 	return marshal(writer, ins, binary.LittleEndian, littleEndianMarshalerType, littleEndianMarshaler)
 }
