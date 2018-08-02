@@ -9,26 +9,40 @@ import (
 	"reflect"
 )
 
+// BigEndianUnmarshaler is the interface implemented by types that can unmarshal the big-endian binary data description of themselves.
+// The input can be assumed to be a valid encoding of a binary value.
+// UnmarshalBigEndian must copy the binary data if it wishes to retain the data after returning.
 type BigEndianUnmarshaler interface {
 	UnmarshalBigEndian(data []byte) (used int, err error)
 }
 
+// LittleEndianUnmarshaler is the interface implemented by types that can unmarshal the little-endian binary data description of themselves.
+// The input can be assumed to be a valid encoding of a binary value.
+// UnmarshalLittleEndian must copy the binary data if it wishes to retain the data after returning.
 type LittleEndianUnmarshaler interface {
 	UnmarshalLittleEndian(data []byte) (used int, err error)
 }
 
+// UnmarshalBigEndian parses the big-endian binary data and stores the result in the value pointed to by ins.
+// If ins is nil or not a pointer, UnmarshalBigEndian returns an error.
 func UnmarshalBigEndian(input []byte, ins interface{}) error {
 	return unmarshal(bytes.NewBuffer(input), ins, binary.BigEndian, bigEndianUnmarshalerType, bigEndianUnmarshaler)
 }
 
+// UnmarshalLittleEndian parses the little-endian binary data and stores the result in the value pointed to by ins.
+// If ins is nil or not a pointer, UnmarshalLittleEndian returns an error.
 func UnmarshalLittleEndian(input []byte, ins interface{}) error {
 	return unmarshal(bytes.NewBuffer(input), ins, binary.LittleEndian, littleEndianUnmarshalerType, littleEndianUnmarshaler)
 }
 
+// UnmarshalBigEndianFrom read and parses big-endian binary data from reader and stores the result in the value pointed to by ins.
+// If ins is nil or not a pointer, UnmarshalBigEndianFrom returns an error.
 func UnmarshalBigEndianFrom(reader io.Reader, ins interface{}) error {
 	return unmarshal(reader, ins, binary.BigEndian, bigEndianUnmarshalerType, bigEndianUnmarshaler)
 }
 
+// UnmarshalLittleEndianFrom read and parses little-endian binary data from reader and stores the result in the value pointed to by ins.
+// If ins is nil or not a pointer, UnmarshalLittleEndianFrom returns an error.
 func UnmarshalLittleEndianFrom(reader io.Reader, ins interface{}) error {
 	return unmarshal(reader, ins, binary.LittleEndian, littleEndianUnmarshalerType, littleEndianUnmarshaler)
 }
