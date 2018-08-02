@@ -209,3 +209,25 @@ func TestMarshalerError(t *testing.T) {
 		}
 	}
 }
+
+func TestMarshalTo(t *testing.T) {
+	var (
+		ins          uint16 = 1080
+		exceptBig           = []byte{4, 56}
+		exceptLittle        = []byte{56, 4}
+		buffer              = new(bytes.Buffer)
+	)
+	if err := MarshalBigEndianTo(buffer, ins); err != nil {
+		t.Errorf("unexcepted error: %v", err)
+	} else if bs := buffer.Bytes(); !bytes.Equal(bs, exceptBig) {
+		t.Errorf("except %v, but got %v,", exceptBig, bs)
+	}
+
+	buffer.Reset()
+
+	if err := MarshalLittleEndianTo(buffer, ins); err != nil {
+		t.Errorf("unexcepted error: %v", err)
+	} else if bs := buffer.Bytes(); !bytes.Equal(bs, exceptLittle) {
+		t.Errorf("except %v, but got %v,", exceptLittle, bs)
+	}
+}
