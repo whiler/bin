@@ -1,9 +1,10 @@
 package bin_test
 
 import (
-	"bin"
 	"encoding/binary"
 	"fmt"
+
+	"github.com/whiler/bin"
 )
 
 type Address struct {
