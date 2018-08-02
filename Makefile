@@ -3,7 +3,13 @@ PKGS := $(shell go list ./... | grep -v vendor | grep -v mock | grep ^bin)
 default:test
 
 test:
+ifndef COVERALLS_TOKEN
+	sed -i '' -e 's/github.com\/whiler\/bin/bin/' example*_test.go
 	go test -v .
+	sed -i '' -e 's/"bin"/"github.com\/whiler\/bin"/' example*_test.go
+else
+	go test -v .
+endif
 
 test-coverage:
 	rm -f *.cover.out coverage.out
