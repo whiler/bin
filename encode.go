@@ -27,9 +27,8 @@ func MarshalBigEndian(ins interface{}) ([]byte, error) {
 	var buffer = new(bytes.Buffer)
 	if err := marshal(buffer, ins, binary.BigEndian, bigEndianMarshalerType, bigEndianMarshaler); err != nil {
 		return []byte{}, err
-	} else {
-		return buffer.Bytes(), err
 	}
+	return buffer.Bytes(), nil
 }
 
 // MarshalLittleEndian returns the little-endian encoding binary data of ins.
@@ -41,9 +40,8 @@ func MarshalLittleEndian(ins interface{}) ([]byte, error) {
 	var buffer = new(bytes.Buffer)
 	if err := marshal(buffer, ins, binary.LittleEndian, littleEndianMarshalerType, littleEndianMarshaler); err != nil {
 		return []byte{}, err
-	} else {
-		return buffer.Bytes(), err
 	}
+	return buffer.Bytes(), nil
 }
 
 // MarshalBigEndianTo writes the big-endian encoding binary data of ins into writer.

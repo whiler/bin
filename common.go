@@ -45,7 +45,7 @@ func handleStructKind(cur *reflect.Value, tpe reflect.Type, stack *valueStack) (
 	var (
 		numField     = cur.NumField()
 		fields       = make([]reflect.Value, numField)
-		idx          = 0
+		idx          int
 		allowInvalid = true
 	)
 
@@ -106,9 +106,8 @@ func (backReader *backfillReader) Read(dst []byte) (int, error) {
 	if offset, _ = backReader.buffer.Read(dst); offset < len(dst) {
 		total, err = backReader.reader.Read(dst[offset:])
 		return total + offset, err
-	} else {
-		return offset, nil
 	}
+	return offset, nil
 }
 
 func (backReader *backfillReader) Backfill(src []byte) (n int, err error) {
