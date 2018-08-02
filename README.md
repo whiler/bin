@@ -23,7 +23,7 @@ go get -u github.com/whiler/bin
 
 ### Examples ###
 #### variable-length types ####
-Let's parse one SOCKS 5 greeting packt from remote.
+Parse one SOCKS 5 greeting packt from remote.
 ```
 type ByteSliceType []byte
 
@@ -54,7 +54,7 @@ err := bin.UnmarshalBigEndianFrom(remote, &req)
 ```
 
 #### fixed-size types ####
-Let's send one SOCKS 5 greeting packt to remote.
+Send one SOCKS 5 greeting packt to remote.
 ```
 type Reply struct {
 	Ver byte
@@ -66,7 +66,7 @@ err := bin.MarshalBigEndianTo(remote, reply)
 ```
 
 #### omit and reorder field ####
-Let's omit some fields and reorder the field by tag.
+Omit some fields and reorder the field by tag.
 ```
 type Request struct {
 	Ver     byte         `bin:"0"`
