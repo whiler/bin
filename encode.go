@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io"
 	"reflect"
 )
 
@@ -16,11 +17,29 @@ type LittleEndianMarshaler interface {
 }
 
 func MarshalBigEndian(ins interface{}) ([]byte, error) {
-	return marshal(ins, binary.BigEndian, bigEndianMarshalerType, bigEndianMarshaler)
+	var buffer = new(bytes.Buffer)
+	if err := marshal(buffer, ins, binary.BigEndian, bigEndianMarshalerType, bigEndianMarshaler); err != nil {
+		return []byte{}, err
+	} else {
+		return buffer.Bytes(), err
+	}
 }
 
 func MarshalLittleEndian(ins interface{}) ([]byte, error) {
-	return marshal(ins, binary.LittleEndian, littleEndianMarshalerType, littleEndianMarshaler)
+	var buffer = new(bytes.Buffer)
+	if err := marshal(buffer, ins, binary.LittleEndian, littleEndianMarshalerType, littleEndianMarshaler); err != nil {
+		return []byte{}, err
+	} else {
+		return buffer.Bytes(), err
+	}
+}
+
+func MarshalBigEndianTo(writer io.Writer, ins interface{}) error {
+	return marshal(writer, ins, binary.BigEndian, bigEndianMarshalerType, bigEndianMarshaler)
+}
+
+func MarshalLittleEndianTo(writer io.Writer, ins interface{}) error {
+	return marshal(writer, ins, binary.LittleEndian, littleEndianMarshalerType, littleEndianMarshaler)
 }
 
 var (
@@ -40,14 +59,13 @@ func littleEndianMarshaler(v interface{}) ([]byte, error) {
 	return marshaler.MarshalLittleEndian()
 }
 
-func marshal(ins interface{}, order binary.ByteOrder, marshalerType reflect.Type, marshaler marshalerFunc) ([]byte, error) {
+func marshal(writer io.Writer, ins interface{}, order binary.ByteOrder, marshalerType reflect.Type, marshaler marshalerFunc) error {
 	var (
-		buffer = new(bytes.Buffer)
-		stack  valueStack
-		cur    reflect.Value
-		tpe    reflect.Type
-		kind   reflect.Kind
-		err    error
+		stack valueStack
+		cur   reflect.Value
+		tpe   reflect.Type
+		kind  reflect.Kind
+		err   error
 	)
 
 	stack.Push(reflect.ValueOf(ins))
@@ -68,7 +86,7 @@ func marshal(ins interface{}, order binary.ByteOrder, marshalerType reflect.Type
 			if data, e := marshaler(cur.Interface()); e != nil {
 				err = e
 			} else {
-				_, err = buffer.Write(data)
+				_, err = writer.Write(data)
 			}
 			continue
 		}
@@ -90,19 +108,19 @@ func marshal(ins interface{}, order binary.ByteOrder, marshalerType reflect.Type
 			}
 
 		case reflect.String:
-			_, err = buffer.WriteString(cur.String())
+			_, err = writer.Write([]byte(cur.String()))
 
 		case reflect.Bool,
 			reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 			reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
 			reflect.Float32, reflect.Float64,
 			reflect.Complex64, reflect.Complex128:
-			err = binary.Write(buffer, order, cur.Interface())
+			err = binary.Write(writer, order, cur.Interface())
 
 		default:
 			err = fmt.Errorf("Unsupported kind %s", kind)
 		}
 	}
 
-	return buffer.Bytes(), err
+	return err
 }
