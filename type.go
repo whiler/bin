@@ -11,14 +11,17 @@ import (
 // +-----+-------+--------+   +--------+
 type Bytes8 []byte
 
+// MarshalBigEndian implements the BigEndianMarshaler interface.
 func (bs8 Bytes8) MarshalBigEndian() ([]byte, error) {
 	return append([]byte{byte(len(bs8))}, []byte(bs8)...), nil
 }
 
+// MarshalLittleEndian implements the LittleEndianMarshaler interface.
 func (bs8 Bytes8) MarshalLittleEndian() ([]byte, error) {
 	return append([]byte{byte(len(bs8))}, []byte(bs8)...), nil
 }
 
+// UnmarshalBigEndian implements the BigEndianUnmarshaler interface.
 func (bs8 *Bytes8) UnmarshalBigEndian(data []byte) (used int, err error) {
 	size := len(data)
 	length := int(data[0])
@@ -32,6 +35,7 @@ func (bs8 *Bytes8) UnmarshalBigEndian(data []byte) (used int, err error) {
 	return
 }
 
+// UnmarshalLittleEndian implements the LittleEndianUnmarshaler interface.
 func (bs8 *Bytes8) UnmarshalLittleEndian(data []byte) (used int, err error) {
 	return bs8.UnmarshalBigEndian(data)
 }
@@ -43,14 +47,17 @@ func (bs8 *Bytes8) UnmarshalLittleEndian(data []byte) (used int, err error) {
 // +-----+-------+--------+   +--------+
 type String8 string
 
+// MarshalBigEndian implements the BigEndianMarshaler interface.
 func (s8 String8) MarshalBigEndian() ([]byte, error) {
 	return append([]byte{byte(len(s8))}, []byte(s8)...), nil
 }
 
+// MarshalLittleEndian implements the LittleEndianMarshaler interface.
 func (s8 String8) MarshalLittleEndian() ([]byte, error) {
 	return append([]byte{byte(len(s8))}, []byte(s8)...), nil
 }
 
+// UnmarshalBigEndian implements the BigEndianUnmarshaler interface.
 func (s8 *String8) UnmarshalBigEndian(data []byte) (used int, err error) {
 	size := len(data)
 	length := int(data[0])
@@ -63,6 +70,7 @@ func (s8 *String8) UnmarshalBigEndian(data []byte) (used int, err error) {
 	return
 }
 
+// UnmarshalLittleEndian implements the LittleEndianUnmarshaler interface.
 func (s8 *String8) UnmarshalLittleEndian(data []byte) (used int, err error) {
 	return s8.UnmarshalBigEndian(data)
 }
