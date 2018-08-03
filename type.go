@@ -6,9 +6,9 @@ import (
 
 // Bytes8 defines a common byte slice type, which max length is 255.
 //
-// +-----+-------+--------+   +--------+
-// | LEN |item-0 | item-1 |...| item-n |
-// +-----+-------+--------+   +--------+
+//	+-----+-------+--------+   +--------+
+// 	| LEN |item-0 | item-1 |...| item-n |
+// 	+-----+-------+--------+   +--------+
 type Bytes8 []byte
 
 // MarshalBigEndian implements the BigEndianMarshaler interface.
@@ -42,9 +42,9 @@ func (bs8 *Bytes8) UnmarshalLittleEndian(data []byte) (used int, err error) {
 
 // String8 defines a common string type, which max length is 255.
 //
-// +-----+-------+--------+   +--------+
-// | LEN |char-0 | char-1 |...| char-n |
-// +-----+-------+--------+   +--------+
+//	+-----+-------+--------+   +--------+
+// 	| LEN |char-0 | char-1 |...| char-n |
+// 	+-----+-------+--------+   +--------+
 type String8 string
 
 // MarshalBigEndian implements the BigEndianMarshaler interface.
