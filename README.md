@@ -80,6 +80,8 @@ type Request struct {
 ### Supported types ###
 `fixed-size types` including `bool`, `int8`, `int16`, `int32`, `int64`, `uint8`, `uint16`, `uint32`, `uint64`, `float32`, `float64`, `complex64`, `complex128` and an array or struct containing only fixed-size types.
 
+The **int** and **uint** types are usually 32 bits wide on 32-bit systems and 64 bits wide on 64-bit systems. They are not `fixed-size types`.
+
 |                           | fixed-size types | string | marshaler               | unmarshaler             |
 |---------------------------|------------------|--------|-------------------------|-------------------------|
 | MarshalBigEndian          | yes              | yes    | BigEndianMarshaler      |                         |
