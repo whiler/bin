@@ -96,7 +96,7 @@ func unmarshal(reader io.Reader, ins interface{}, order binary.ByteOrder, unmars
 			if size, err = backReader.Read(buf); err != nil {
 				continue
 			}
-			if delta, err = unmarshaler(cur.Interface(), buf); err == nil {
+			if delta, err = unmarshaler(cur.Interface(), buf[0:size]); err == nil {
 				_, err = backReader.Backfill(buf[delta:size])
 			}
 			continue
