@@ -98,16 +98,10 @@ func newBackfillReader(reader io.Reader) *backfillReader {
 }
 
 func (backReader *backfillReader) Read(dst []byte) (int, error) {
-	var (
-		offset int
-		total  int
-		err    error
-	)
-	if offset, _ = backReader.buffer.Read(dst); offset < len(dst) {
-		total, err = backReader.reader.Read(dst[offset:])
-		return total + offset, err
+	if size, _ := backReader.buffer.Read(dst); size > 0 {
+		return size, nil
 	}
-	return offset, nil
+	return backReader.reader.Read(dst)
 }
 
 func (backReader *backfillReader) Backfill(src []byte) (n int, err error) {
