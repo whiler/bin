@@ -82,7 +82,7 @@ type Request struct {
 
 The **int** and **uint** types are usually 32 bits wide on 32-bit systems and 64 bits wide on 64-bit systems. They are not `fixed-size types`.
 
-|                           | fixed-size types | string | marshaler               | unmarshaler             |
+| function                  | fixed-size types | string | marshaler               | unmarshaler             |
 |---------------------------|------------------|--------|-------------------------|-------------------------|
 | MarshalBigEndian          | yes              | yes    | BigEndianMarshaler      |                         |
 | MarshalBigEndianTo        | yes              | yes    | BigEndianMarshaler      |                         |
@@ -92,6 +92,12 @@ The **int** and **uint** types are usually 32 bits wide on 32-bit systems and 64
 | UnmarshalBigEndianFrom    | yes              | no     |                         | BigEndianUnmarshaler    |
 | UnmarshalLittleEndian     | yes              | no     |                         | LittleEndianUnmarshaler |
 | UnmarshalLittleEndianFrom | yes              | no     |                         | LittleEndianUnmarshaler |
+
+#### common types ####
+| type    | definition                               |
+|---------|------------------------------------------|
+| Bytes8  | byte slice type, which max length is 255 |
+| String8 | string type, which max length is 255     |
 
 ### struct tag ###
 tag syntax: `bin:"-"` or `bin:"[0-9]+"`
