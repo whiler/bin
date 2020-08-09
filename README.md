@@ -23,46 +23,34 @@ go get -u github.com/whiler/bin
 
 ### Examples ###
 #### variable-length types ####
-Parse one SOCKS 5 greeting packt from remote.
+TLV, the max length of value less than 255.
 ```
-type ByteSliceType []byte
-
-func (bs *ByteSliceType) UnmarshalBigEndian(data []byte) (used int, err error) {
-	size := len(data)
-	if size == 0 {
-		err = fmt.Errorf("Empty Data")
-		return
-	}
-	length := int(data[0])
-	if size < length+1 {
-		err = fmt.Errorf("Need more %d byte(s)", length+1-size)
-		return
-	}
-	*bs = make([]byte, length)
-	copy(*bs, data[1:length+1])
-	used = length + 1
-	return
+// +-----+----------+----------+
+// | VER | NMETHODS | METHODS  |
+// +-----+----------+----------+
+// | 1   |    1     | 1 to 255 |
+// +-----+----------+----------+
+type Req struct {
+	Ver byte
+	Methods Bytes8
 }
-
-type Request struct {
-	Ver     byte
-	Methods *ByteSliceType
-}
-
-req := Request{}
-err := bin.UnmarshalBigEndianFrom(remote, &req)
+req := Req{}
+err := bin.UnmarshalBigEndianFrom(bytes.NewReader([]byte{5, 1, 0}), &req)
 ```
 
 #### fixed-size types ####
-Send one SOCKS 5 greeting packt to remote.
 ```
+// +-----+--------+
+// | VER | METHOD |
+// +-----+--------+
+// | 1   |   1    |
+// +-----+--------+
 type Reply struct {
 	Ver byte
 	Method byte
 }
-
-reply := Reply{Ver: 5, Method: 2}
-err := bin.MarshalBigEndianTo(remote, reply)
+reply := Reply{Ver: 5, Method: 0}
+err := bin.MarshalBigEndianTo(writer, reply)
 ```
 
 #### omit and reorder field ####
@@ -94,10 +82,16 @@ The **int** and **uint** types are usually 32 bits wide on 32-bit systems and 64
 | UnmarshalLittleEndianFrom | yes              | no     |                         | LittleEndianUnmarshaler |
 
 #### common types ####
-| type    | definition                               |
-|---------|------------------------------------------|
-| Bytes8  | byte slice type, which max length is 255 |
-| String8 | string type, which max length is 255     |
+| type     | definition                                        |
+|----------|---------------------------------------------------|
+| Bytes8   | byte slice type, which max length is 255          |
+| Bytes16  | byte slice type, the max length is math.MaxUint16 |
+| Bytes32  | byte slice type, the max length is math.MaxUint32 |
+| Bytes64  | byte slice type, the max length is math.MaxUint64 |
+| String8  | string type, which max length is 255              |
+| String16 | string type, which max length is math.MaxUint16   |
+| String32 | string type, which max length is math.MaxUint32   |
+| String64 | string type, which max length is math.MaxUint64   |
 
 ### struct tag ###
 tag syntax: `bin:"-"` or `bin:"[0-9]+"`
